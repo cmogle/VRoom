@@ -46,7 +46,12 @@ camera effect.
   corner.
 - **Slip angle:** each tyre creates cornering force when it points in a
   different direction from its contact-patch travel.
-- **Friction circle:** braking and cornering share a finite amount of tyre grip.
+- **Friction circle:** braking, power and cornering requests are scaled together
+  so using more of one leaves proportionally less of the others without
+  completely removing steering authority.
+- **Speed-sensitive steering:** full keyboard input targets a safe lateral
+  acceleration, giving useful lock at parking speed without demanding
+  impossible tyre angles at 100 km/h.
 - **Weight transfer:** acceleration, braking, cornering and uneven ground move
   load between the four tyres through the sprung chassis.
 - **Rotational inertia:** the car takes time to pitch, roll and yaw.
@@ -105,8 +110,8 @@ change:
 - Put each bug or development request in a GitHub Issue.
 - Give accepted issues a priority and mark them `ready` when the expected result
   is clear.
-- Make every code change on a branch and review it in a pull request before
-  merging it into `main`.
+- Keep the repository on `main`; do not create development branches.
+- Run the relevant checks before committing or pushing `main`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the request forms, priority meanings,
 and the complete workflow.

@@ -39,6 +39,7 @@ export const PHYSICS = {
   angularDamping: 0.72,
 
   maxSteerAngle: 0.48,
+  steeringLateralG: 0.8,
   steeringResponse: 9,
   engineForce: 7900,
   reverseForce: 3900,
@@ -84,15 +85,32 @@ const COLOURS = {
 };
 
 function limitTyreForces(longitudinal, lateralRequest, capacity) {
-  // Longitudinal and lateral work share the same finite contact-patch budget.
-  const fx = clamp(longitudinal, -capacity, capacity);
-  const lateralCapacity = Math.sqrt(Math.max(0, capacity * capacity - fx * fx));
-  const fy = clamp(lateralRequest, -lateralCapacity, lateralCapacity);
+  // Scale the complete force request onto the friction circle. Giving engine
+  // force absolute priority used to leave a powered rear tyre with no lateral
+  // authority, so tiny bumps rapidly became unrecoverable spins.
+  if (capacity <= 0) {
+    return { longitudinal: 0, lateral: 0, utilisation: 0 };
+  }
+  const requestedMagnitude = Math.hypot(longitudinal, lateralRequest);
+  const forceScale =
+    requestedMagnitude > capacity ? capacity / requestedMagnitude : 1;
+  const fx = longitudinal * forceScale;
+  const fy = lateralRequest * forceScale;
   return {
     longitudinal: fx,
     lateral: fy,
-    utilisation: capacity > 0 ? Math.hypot(fx, fy) / capacity : 0,
+    utilisation: Math.hypot(fx, fy) / capacity,
   };
+}
+
+export function getSteeringLimit(speed) {
+  const wheelbase = PHYSICS.cgToFrontAxle + PHYSICS.cgToRearAxle;
+  const lateralAcceleration = PHYSICS.steeringLateralG * GRAVITY;
+  const gripLimitedAngle = Math.atan(
+    (lateralAcceleration * wheelbase) /
+      Math.max(speed * speed, 0.5)
+  );
+  return Math.min(PHYSICS.maxSteerAngle, gripLimitedAngle);
 }
 
 function safeTerrainSample(terrain, x, z) {
@@ -354,17 +372,35 @@ export class Car {
     for (const wheel of this.wheels) {
       wheel.compression = STATIC_SPRING_COMPRESSION;
       wheel.previousCompression = STATIC_SPRING_COMPRESSION;
-      wheel.suspensionLength =
-        PHYSICS.suspensionRestLength - STATIC_SPRING_COMPRESSION;
-      wheel.grounded = true;
-      wheel.normalLoad = (PHYSICS.mass * GRAVITY) / 4;
       wheel.slipAngle = 0;
       wheel.gripUtilisation = 0;
+      wheel.longitudinalSpeed = 0;
     }
+
+    // Prime every corner from its own terrain height. Without this, the first
+    // physics step interpreted ordinary slope differences as enormous damper
+    // velocities and could momentarily unload half the car.
+    const forward = new THREE.Vector3(
+      Math.sin(this.heading),
+      0,
+      Math.cos(this.heading)
+    );
+    const right = new THREE.Vector3(
+      Math.cos(this.heading),
+      0,
+      -Math.sin(this.heading)
+    );
+    this.updateSuspension(
+      1 / 120,
+      this.terrain ?? FLAT_TARMAC,
+      forward,
+      right,
+      true
+    );
     this.updateWheelVisuals(0);
   }
 
-  updateSuspension(dt, terrain, forward, right) {
+  updateSuspension(dt, terrain, forward, right, prime = false) {
     for (const wheel of this.wheels) {
       const worldX =
         this.group.position.x +
@@ -385,8 +421,9 @@ export class Car {
         mountHeight - (sample.height + PHYSICS.wheelRadius);
       const compression = PHYSICS.suspensionRestLength - rawLength;
       const grounded = rawLength <= PHYSICS.suspensionMaxLength;
-      const compressionSpeed =
-        (compression - wheel.previousCompression) / Math.max(dt, 1e-4);
+      const compressionSpeed = prime
+        ? 0
+        : (compression - wheel.previousCompression) / Math.max(dt, 1e-4);
 
       let normalLoad = 0;
       if (grounded) {
@@ -445,13 +482,7 @@ export class Car {
     const speed = horizontalVelocity.length();
 
     const steerInput = Number(input.right) - Number(input.left);
-    const speedSteerReduction = THREE.MathUtils.lerp(
-      1,
-      0.48,
-      clamp(Math.abs(forwardSpeed) / 42, 0, 1)
-    );
-    const steerTarget =
-      steerInput * PHYSICS.maxSteerAngle * speedSteerReduction;
+    const steerTarget = steerInput * getSteeringLimit(Math.abs(forwardSpeed));
     this.steerAngle = THREE.MathUtils.damp(
       this.steerAngle,
       steerTarget,
@@ -529,7 +560,6 @@ export class Car {
       0,
       1
     );
-    const direction = forwardSpeed < -0.35 ? -1 : 1;
     const staticCornerLoad = (PHYSICS.mass * GRAVITY) / 4;
 
     for (const wheel of this.wheels) {
@@ -560,7 +590,7 @@ export class Car {
       wheel.longitudinalSpeed = longitudinalSpeed;
       const slipAngle = clamp(
         Math.atan2(
-          lateralSpeed * direction,
+          lateralSpeed,
           Math.max(Math.abs(longitudinalSpeed), 1.2)
         ) * lowSpeedBlend,
         -0.65,
