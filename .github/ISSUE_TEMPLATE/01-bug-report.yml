@@ -1,0 +1,82 @@
+name: Report a bug
+description: Tell us about something in VROOM that is not working as expected.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve VROOM. Please describe one problem per report.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem in your own words.
+      placeholder: The car continued steering right after I released the right arrow.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How can we reproduce it?
+      description: List the actions that reliably make the problem appear.
+      placeholder: |
+        1. Start the game.
+        2. Accelerate and hold the right arrow.
+        3. Release the right arrow.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Explain what VROOM should have done instead.
+      placeholder: The steering should return to the centre.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      description: Where did you see the problem?
+      options:
+        - Chrome
+        - Safari
+        - Firefox
+        - Microsoft Edge
+        - Other or not sure
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: For example, MacBook, Windows laptop, iPad, or Android phone.
+      placeholder: MacBook Air
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, video, or extra detail
+      description: Drag files into this box, or add anything else that may help.
+
+  - type: textarea
+    id: done
+    attributes:
+      label: What would make this fixed?
+      description: Describe a simple result we can use to check the completed work.
+      placeholder: Releasing either steering key reliably centres the steering.
+
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Existing reports
+      options:
+        - label: I checked the open issues and did not find the same problem.
+          required: true

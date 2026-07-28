@@ -1,0 +1,63 @@
+name: Suggest an improvement
+description: Propose a new feature or a change that would make VROOM better.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Describe the experience you want; you do not need to know how to build it.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like VROOM to do?
+      description: Describe one feature or improvement.
+      placeholder: Add a lap timer that starts and finishes at the line.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why would this improve the game?
+      description: Explain the problem it solves or the experience it creates.
+      placeholder: It would give each run a goal and make it possible to compare attempts.
+    validations:
+      required: true
+
+  - type: textarea
+    id: experience
+    attributes:
+      label: How should it work for the player?
+      description: Walk through the simplest useful version from the player's point of view.
+      placeholder: The timer starts when the car crosses the line and shows the completed time after one lap.
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: What would count as finished?
+      description: List the results we should be able to see or test.
+      placeholder: |
+        - Crossing the start line begins the timer.
+        - Completing a lap stops it.
+        - The current and best times are visible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Sketches, examples, or extra detail
+      description: Drag files into this box or add links to helpful examples.
+
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Existing requests
+      options:
+        - label: I checked the open issues and did not find the same request.
+          required: true
