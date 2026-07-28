@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="data:," />
   <title>VROOM</title>
   <style>
     :root {
@@ -54,9 +55,83 @@
       font-weight: normal;
       opacity: 0.7;
     }
+    .telemetry {
+      width: 350px;
+      padding: 14px 16px 12px;
+      color: var(--paper);
+      background: color-mix(in srgb, var(--ink) 88%, transparent);
+      border: 1px solid rgba(242, 237, 227, 0.28);
+      backdrop-filter: blur(8px);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .telemetry.hidden {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .telemetry-title {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.16em;
+    }
+    .surface {
+      color: #e7a257;
+    }
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px 18px;
+    }
+    .reading {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .reading span:first-child {
+      opacity: 0.62;
+    }
+    .reading output {
+      font-variant-numeric: tabular-nums;
+    }
+    .grip-row {
+      display: grid;
+      grid-template-columns: 38px 1fr 32px;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+    }
+    .grip-track {
+      height: 4px;
+      background: rgba(242, 237, 227, 0.2);
+      overflow: hidden;
+    }
+    .grip-fill {
+      width: 0;
+      height: 100%;
+      background: #e7a257;
+      transition: width 80ms linear, background 120ms ease;
+    }
+    .telemetry-note {
+      margin-top: 9px;
+      font-size: 9px;
+      line-height: 1.45;
+      letter-spacing: 0.04em;
+      opacity: 0.52;
+    }
     @media (max-width: 600px) {
       .hint { display: none; }
       .speed { font-size: 28px; }
+      .telemetry {
+        width: 250px;
+        padding: 10px 12px;
+      }
+      .telemetry-note { display: none; }
     }
   </style>
 </head>
@@ -64,10 +139,35 @@
   <div class="hud">
     <div class="row">
       <div class="title">VROOM</div>
-      <div class="hint">WASD / arrows to drive &nbsp;·&nbsp; space = handbrake &nbsp;·&nbsp; R = reset</div>
+      <div class="hint">WASD / arrows to drive &nbsp;·&nbsp; space = handbrake &nbsp;·&nbsp; T = telemetry &nbsp;·&nbsp; R = reset</div>
     </div>
     <div class="row">
-      <div></div>
+      <section class="telemetry" id="telemetry">
+        <div class="telemetry-title">
+          <span>PHYSICS LAB</span>
+          <span class="surface" id="surface">TARMAC</span>
+        </div>
+        <div class="telemetry-grid">
+          <div class="reading"><span>LONG. G</span><output id="long-g">+0.00</output></div>
+          <div class="reading"><span>LAT. G</span><output id="lat-g">+0.00</output></div>
+          <div class="reading"><span>FRONT SLIP</span><output id="front-slip">0.0°</output></div>
+          <div class="reading"><span>REAR SLIP</span><output id="rear-slip">0.0°</output></div>
+          <div class="reading"><span>FRONT LOAD</span><output id="front-load">50%</output></div>
+          <div class="reading"><span>DOWNFORCE</span><output id="downforce">0 N</output></div>
+          <div class="reading"><span>VERTICAL G</span><output id="vertical-g">+0.00</output></div>
+          <div class="reading"><span>CONTACT</span><output id="wheel-contact">4/4</output></div>
+          <div class="reading"><span>FL LOAD</span><output id="load-fl">0 N</output></div>
+          <div class="reading"><span>FR LOAD</span><output id="load-fr">0 N</output></div>
+          <div class="reading"><span>RL LOAD</span><output id="load-rl">0 N</output></div>
+          <div class="reading"><span>RR LOAD</span><output id="load-rr">0 N</output></div>
+        </div>
+        <div class="grip-row">
+          <span>GRIP</span>
+          <div class="grip-track"><div class="grip-fill" id="grip-fill"></div></div>
+          <output id="grip-value">0%</output>
+        </div>
+        <p class="telemetry-note">Each tyre's spring load sets its grip budget. Kerbs, jumps and landings move that load between all four corners.</p>
+      </section>
       <div class="speed"><span id="speed">0</span> <small>KM/H</small></div>
     </div>
   </div>

@@ -1,7 +1,7 @@
 # Working on VROOM together
 
-GitHub Issues are VROOM's shared list of bugs and development requests. Pull
-requests are where code changes are reviewed before they reach the live game.
+GitHub Issues are VROOM's shared list of bugs and development requests. The
+repository uses one branch only: `main`.
 
 ## Report a bug or suggest an improvement
 
@@ -34,13 +34,11 @@ author feels about it.
 ## Make the change
 
 1. Choose the highest-priority open issue labelled `ready`.
-2. Create a branch from `main`; do not develop directly on `main`.
-3. Keep the change focused on that issue and run the relevant checks.
-4. Open a pull request and include `Closes #123`, using the real issue number.
-5. Review and test the pull request. Put implementation feedback on the pull
-   request and unrelated requests in new issues.
-6. Merge after the feedback is resolved and the checks pass. GitHub will close
-   the linked issue automatically.
+2. Pull the latest `main` and make the focused change directly on `main`.
+3. Run the relevant checks before committing.
+4. Commit with a concise description and push `main`.
+5. Put unrelated requests in new issues rather than expanding the current
+   change.
 
 The `main` branch deploys to the live VROOM site, so it should always be in a
 working state.
@@ -55,6 +53,6 @@ For triage:
 
 For development:
 
-> Work on the highest-priority open issue labelled `ready`. Create a branch and
-> pull request, run the relevant checks, and leave the pull request for review.
-> Do not merge it.
+> Work on the highest-priority open issue labelled `ready` directly on `main`.
+> Keep the change focused, run the relevant checks, and commit and push only
+> when requested.
