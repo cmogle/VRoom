@@ -48,9 +48,14 @@ Easy wins, in rough order:
 
 ## How we work on it together
 
-- Small changes: commit straight to `main` with a message saying what you did
-- Bigger experiments: make a branch, then we look at it together before merging
-- If it breaks: `git log` to see what changed, and nothing is ever truly lost
+- Put each bug or development request in a GitHub Issue.
+- Give accepted issues a priority and mark them `ready` when the expected result
+  is clear.
+- Make every code change on a branch and review it in a pull request before
+  merging it into `main`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the request forms, priority meanings,
+and the complete workflow.
 
 ## Deploying
 
