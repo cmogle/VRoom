@@ -37,20 +37,21 @@ export const PHYSICS = {
   bumpStopRate: 72000,
   maxSuspensionForce: 65000,
   angularDamping: 0.72,
+  straightLineYawDamping: 2.8,
 
   maxSteerAngle: 0.48,
   steeringLateralG: 0.8,
   steeringResponse: 9,
-  engineForce: 7900,
+  engineForce: 12000,
   reverseForce: 3900,
-  enginePower: 178000,
+  enginePower: 240000,
   brakeForce: 12500,
   handbrakeForce: 5200,
   brakeBiasFront: 0.62,
 
   frontCorneringStiffness: 61000,
   rearCorneringStiffness: 66000,
-  roadFriction: 1.18,
+  roadFriction: 1.55,
   handbrakeRearGrip: 0.36,
 
   dragArea: 0.72,
@@ -481,7 +482,11 @@ export class Car {
     const forwardSpeed = horizontalVelocity.dot(forward);
     const speed = horizontalVelocity.length();
 
-    const steerInput = Number(input.right) - Number(input.left);
+    // The model's nose points along local +Z. From a chase camera looking
+    // along +Z, local +X appears on the left side of the screen, so positive
+    // wheel lock is visually left. Keep the input sign in screen space: D /
+    // ArrowRight must target negative lock, as it did in the original game.
+    const steerInput = Number(input.left) - Number(input.right);
     const steerTarget = steerInput * getSteeringLimit(Math.abs(forwardSpeed));
     this.steerAngle = THREE.MathUtils.damp(
       this.steerAngle,
@@ -686,7 +691,11 @@ export class Car {
     this.pitchRate += (pitchTorque / PHYSICS.pitchInertia) * dt;
     this.rollRate += (rollTorque / PHYSICS.rollInertia) * dt;
     const angularDecay = Math.exp(-PHYSICS.angularDamping * dt);
-    this.yawRate *= Math.exp(-0.16 * dt);
+    const straightLineAssist =
+      (1 - Math.min(Math.abs(steerInput), 1)) *
+      PHYSICS.straightLineYawDamping *
+      clamp(speed / 10, 0, 1);
+    this.yawRate *= Math.exp(-(0.16 + straightLineAssist) * dt);
     this.pitchRate *= angularDecay;
     this.rollRate *= angularDecay;
 

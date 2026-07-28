@@ -26,7 +26,7 @@ const COLOURS = {
 export const SURFACES = {
   tarmac: {
     name: "TARMAC",
-    friction: 1.18,
+    friction: 1.55,
     rollingResistance: 0,
   },
   sand: {

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Car } from "./car.js";
 import { World } from "./world.js";
 import { ChaseCamera } from "./camera.js";
+import { advancePhysics } from "./physics-loop.js";
 import "./input.js";
 
 // ---------------------------------------------------------------
@@ -50,8 +51,6 @@ const telemetryEls = {
 };
 
 const clock = new THREE.Clock();
-const PHYSICS_STEP = 1 / 120;
-const MAX_PHYSICS_STEPS = 10;
 let accumulator = 0;
 
 window.addEventListener("keydown", (event) => {
@@ -93,16 +92,11 @@ function updateTelemetry() {
 function loop() {
   // Rendering follows the monitor; physics always advances in identical 1/120 s
   // slices. This makes the force model stable on both fast and slow computers.
-  const frameDt = Math.min(clock.getDelta(), 0.1);
-  accumulator += frameDt;
-  let steps = 0;
-  while (accumulator >= PHYSICS_STEP && steps < MAX_PHYSICS_STEPS) {
-    car.update(PHYSICS_STEP, world);
-    world.update(PHYSICS_STEP, car);
-    accumulator -= PHYSICS_STEP;
-    steps += 1;
-  }
-  if (steps === MAX_PHYSICS_STEPS) accumulator = 0;
+  const frameDt = clock.getDelta();
+  accumulator = advancePhysics(accumulator, frameDt, (dt) => {
+    car.update(dt, world);
+    world.update(dt, car);
+  });
 
   chaseCam.update(frameDt, car);
   updateTelemetry();

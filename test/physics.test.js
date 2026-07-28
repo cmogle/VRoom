@@ -7,10 +7,12 @@ globalThis.window = { addEventListener() {} };
 
 const { Car, PHYSICS, getSteeringLimit } = await import("../src/car.js");
 const { input } = await import("../src/input.js");
-const { World } = await import("../src/world.js");
+const { ChaseCamera } = await import("../src/camera.js");
+const { advancePhysics } = await import("../src/physics-loop.js");
+const { World, SURFACES } = await import("../src/world.js");
 
-const TARMAC = { name: "TARMAC", friction: 1.18, rollingResistance: 0 };
-const SAND = { name: "SAND", friction: 0.58, rollingResistance: 760 };
+const TARMAC = SURFACES.tarmac;
+const SAND = SURFACES.sand;
 const DT = 1 / 120;
 
 function resetInput() {
@@ -34,12 +36,24 @@ function simulate(car, seconds, surface = TARMAC) {
   for (let step = 0; step < steps; step++) car.update(DT, surface);
 }
 
-test("accelerates from rest using SI-scale forces", () => {
+test("launch response reaches useful road speed quickly", () => {
   const car = freshCar();
   input.forward = true;
+  simulate(car, 1);
+
+  assert.ok(
+    car.speedKmh > 34,
+    `expected >34 km/h after 1 second, got ${car.speedKmh}`
+  );
+
+  const oneSecondDistance = car.group.position.distanceTo(car.spawn);
   simulate(car, 3);
 
-  assert.ok(car.speedKmh > 55, `expected >55 km/h, got ${car.speedKmh}`);
+  assert.ok(
+    car.speedKmh > 125,
+    `expected >125 km/h after 4 seconds, got ${car.speedKmh}`
+  );
+  assert.ok(oneSecondDistance > 4.5);
   assert.ok(car.telemetry.longitudinalG > 0);
   assert.ok(car.telemetry.gripUsed <= 1.000001);
 });
@@ -60,25 +74,28 @@ test("sand reduces acceleration and adds rolling resistance", () => {
   );
 });
 
-test("steering creates yaw and lateral acceleration", () => {
+test("right steering moves right in the chase camera", () => {
   const car = freshCar();
   input.forward = true;
   simulate(car, 2);
   const initialHeading = car.heading;
   const initialPosition = car.group.position.clone();
-  const initialRight = new THREE.Vector3(
-    Math.cos(initialHeading),
-    0,
-    -Math.sin(initialHeading)
+  const chaseCamera = new ChaseCamera();
+  chaseCamera.update(DT, car);
+  const screenRight = new THREE.Vector3(1, 0, 0).applyQuaternion(
+    chaseCamera.camera.quaternion
   );
+  screenRight.y = 0;
+  screenRight.normalize();
 
   input.right = true;
   simulate(car, 0.8);
 
-  assert.ok(car.heading > initialHeading, "right steering should increase heading");
+  assert.ok(car.heading < initialHeading, "right steering should decrease heading");
+  assert.ok(car.steerAngle < 0, "right steering should target negative wheel lock");
   assert.ok(
-    car.group.position.clone().sub(initialPosition).dot(initialRight) > 0.2,
-    "right steering should move the car towards its world-space right"
+    car.group.position.clone().sub(initialPosition).dot(screenRight) > 0.2,
+    "right steering should move the car towards the right side of the screen"
   );
   assert.ok(Math.abs(car.telemetry.lateralG) > 0.05);
   assert.ok(Math.abs(car.telemetry.frontSlipDeg) > 0.1);
@@ -92,9 +109,26 @@ test("steering yaw reverses correctly while travelling backwards", () => {
   input.right = true;
   simulate(car, 0.5);
 
-  assert.ok(car.heading < 0, "right lock in reverse should produce negative yaw");
-  assert.ok(car.yawRate < 0);
-  assert.ok(car.telemetry.lateralG > 0);
+  assert.ok(car.heading > 0, "right lock in reverse should produce positive yaw");
+  assert.ok(car.yawRate > 0);
+  assert.ok(car.telemetry.lateralG < 0);
+});
+
+test("slow rendering does not make physics run in slow motion", () => {
+  let accumulator = 0;
+  let simulatedTime = 0;
+
+  for (let frame = 0; frame < 20; frame++) {
+    accumulator = advancePhysics(accumulator, 0.1, (dt) => {
+      simulatedTime += dt;
+    });
+  }
+
+  assert.ok(
+    Math.abs(simulatedTime - 2) < DT,
+    `2 seconds of 10 fps rendering only advanced ${simulatedTime} physics seconds`
+  );
+  assert.ok(accumulator < DT);
 });
 
 test("speed-sensitive steering stays inside a controllable slip envelope", () => {
